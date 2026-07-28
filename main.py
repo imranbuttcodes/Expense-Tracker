@@ -5,7 +5,7 @@ from typing import Optional
 import aiosqlite
 from fastmcp import FastMCP
 
-DB_PATH = os.getenv("EXPENSE_DB_PATH", "expenses.db")
+DB_PATH = os.getenv("EXPENSE_DB_PATH", "/tmp/expenses.db")
 
 mcp = FastMCP(name="Expense-Tracker-MCP-Server")
 
