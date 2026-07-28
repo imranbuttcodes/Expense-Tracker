@@ -16,24 +16,6 @@ async def get_db():
     return db
 
 
-async def init_db():
-    db = await get_db()
-    await db.execute(
-        """
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            amount REAL NOT NULL,
-            category TEXT NOT NULL,
-            note TEXT,
-            expense_date TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """
-    )
-    await db.commit()
-    await db.close()
-
-
 @mcp.tool
 async def add_expenses(
     amount: float,
@@ -226,10 +208,37 @@ async def summarize(start_date: str, end_date: str) -> list:
     return [dict(r) for r in rows]
 
 
-if __name__ == "__main__":
-    import asyncio
+def _init_db_sync():
+    """Create the expenses table synchronously at import time.
 
-    asyncio.run(init_db())
+    Horizon imports this module directly and never runs the __main__
+    block below, so we can't rely on asyncio.run(init_db()) happening
+    there. Plain sqlite3 avoids any event-loop timing issues since this
+    runs once, immediately, when the module is first loaded.
+    """
+    import sqlite3
+
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL,
+            note TEXT,
+            expense_date TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    conn.commit()
+    conn.close()
+
+
+_init_db_sync()
+
+
+if __name__ == "__main__":
     mcp.run(
         transport="http",
         host="0.0.0.0",
